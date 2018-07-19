@@ -5,9 +5,11 @@ metadata:
     app: rabbitmq
   name: rabbitmq
 spec:
+  type: NodePort
   ports:
   - port: 5672
     name: port-5672
+    nodePort: 32100
   - port: 4369
     name: port-4369
   - port: 5671
