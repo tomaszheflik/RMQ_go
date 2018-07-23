@@ -2,7 +2,7 @@ package main
 
 import (
 "fmt"
-
+"time"
 )
 func update(data []Build, element Build ) []Build {
 	for key, value := range data {
@@ -53,21 +53,30 @@ func main() {
 			readFromQueue(rabbit, statusQueue, statusChan)
 	}()
 
+	go func(){
+		for {
+			toProcess = <-message
+			sendToQueue(toProcess, rabbit, builderQueue)
+			build = getBuildStruct(toProcess)
+			buildData = update(buildData, build)
+		}
+	}()
+
+	go func(){
+		for {
+			toStatus = <-statusChan
+			statusOfBuild = getBuildStruct(toStatus)
+			if statusOfBuild.Status == "Building" {
+				buildData = update(buildData, statusOfBuild)
+			}
+			if statusOfBuild.Status == "Done" {
+				buildData = delete(buildData, statusOfBuild)
+			}
+		}
+	}()
 	for {
-		toProcess = <-message
-		sendToQueue(toProcess, rabbit, builderQueue)
-		
-		toStatus = <-statusChan
-		build = getBuildStruct(toProcess)
-		statusOfBuild = getBuildStruct(toStatus)
-		buildData = update(buildData, build)
-		if statusOfBuild.Status == "Building" {
-			buildData = update(buildData, statusOfBuild)
-		}
-		if statusOfBuild.Status == "Done" {
-			buildData = delete(buildData, statusOfBuild)
-		}
 		visualise(buildData)
+		time.Sleep(1 * time.Second)
 	}
 }
 	

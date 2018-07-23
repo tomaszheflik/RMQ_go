@@ -31,14 +31,14 @@ func main() {
 	
 	for {
 		build.ID = generateID()
-		build.Payload = generatePayload(10)
+		build.Payload = generatePayload(20)
 		build.Status = "Inqueue"
 		fmt.Printf("Sending build: %s\n", build)
 		err := sendToQueue(getBuildJSON(build), rabbit, queueName) 
 		if err != nil {
 			break
 		}
-		time.Sleep(time.Duration(generatePayload(20)) * time.Second)
+		time.Sleep(generatePayload(10) * time.Second)
 	}
 	fmt.Printf("End of sending.")
 }
