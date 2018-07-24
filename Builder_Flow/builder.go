@@ -28,20 +28,21 @@ func main() {
 	builderQueue := "build"
 	statusQueue := "status"
 	var build Build
-	var toProcess string
+	var toProcess Message
 
-	message := make(chan string)
+	message := make(chan Message)
 	go func(){
 			readFromQueue(rabbit, builderQueue, message)
 	}()
 
 	for {
 		toProcess = <-message
-		fmt.Printf("Job for Builder: %s\n", toProcess)
-		build = getBuildStruct(toProcess)
+		fmt.Printf("Job for Builder: %s\n", toProcess.BODY)
+		build = getBuildStruct(toProcess.BODY)
 		err := process(rabbit, statusQueue, build)
 		if err != nil {
 			return 
 		}
+		toProcess.ACK <- true
 	}
 }

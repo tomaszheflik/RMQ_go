@@ -4,7 +4,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func readFromQueue(rabbitHost string, queueName string, mchan chan string) {
+func readFromQueue(rabbitHost string, queueName string, mchan chan Message) {
+	var message Message 
 	conn, err := amqp.Dial(rabbitHost)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -15,7 +16,7 @@ func readFromQueue(rabbitHost string, queueName string, mchan chan string) {
 
 	q, err := ch.QueueDeclare(
 		queueName, // name
-		false,   // durable
+		true,   // durable
 		false,   // delete when unused
 		false,   // exclusive
 		false,   // no-wait
@@ -26,16 +27,23 @@ func readFromQueue(rabbitHost string, queueName string, mchan chan string) {
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		true,   // auto-ack
+		false,   // auto-ack
 		false,  // exclusive
 		false,  // no-local
 		false,  // no-wait
 		nil,    // args
 	)
 	failOnError(err, "Failed to register a consumer")
+	
+	ack := make(chan bool)
+	message.ACK = ack
 	for {
 		for d := range msgs {
-			mchan <- string(d.Body)
+			message.BODY = string(d.Body)
+			mchan <- message
+			if <-ack {
+				d.Ack(true)
+			}
 		}
 	}
 	

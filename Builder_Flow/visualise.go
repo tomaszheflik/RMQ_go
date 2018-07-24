@@ -40,15 +40,15 @@ func main() {
 	builderQueue := "build"
 	statusQueue := "status"
 	var build, statusOfBuild Build
-	var toProcess, toStatus string
+	var toProcess, toStatus Message
 	var buildData []Build
 
-	message := make(chan string)
+	message := make(chan Message)
 	go func(){
 			readFromQueue(rabbit, readQueueName, message)
 	}()
 
-	statusChan := make(chan string)
+	statusChan := make(chan Message)
 	go func(){
 			readFromQueue(rabbit, statusQueue, statusChan)
 	}()
@@ -56,22 +56,24 @@ func main() {
 	go func(){
 		for {
 			toProcess = <-message
-			sendToQueue(toProcess, rabbit, builderQueue)
-			build = getBuildStruct(toProcess)
+			sendToQueue(toProcess.BODY, rabbit, builderQueue)
+			build = getBuildStruct(toProcess.BODY)
 			buildData = update(buildData, build)
+			toProcess.ACK <- true
 		}
 	}()
 
 	go func(){
 		for {
 			toStatus = <-statusChan
-			statusOfBuild = getBuildStruct(toStatus)
+			statusOfBuild = getBuildStruct(toStatus.BODY)
 			if statusOfBuild.Status == "Building" {
 				buildData = update(buildData, statusOfBuild)
 			}
 			if statusOfBuild.Status == "Done" {
 				buildData = delete(buildData, statusOfBuild)
 			}
+			toStatus.ACK <- true
 		}
 	}()
 	for {

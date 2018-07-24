@@ -15,7 +15,7 @@ func sendToQueue(body string, rabbitHost string, qname string) error {
 
 	q, err := ch.QueueDeclare(
 		qname,
-		false,
+		true,
 		false,
 		false,
 		false,
