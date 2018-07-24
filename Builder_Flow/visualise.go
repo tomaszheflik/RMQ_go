@@ -44,14 +44,10 @@ func main() {
 	var buildData []Build
 
 	message := make(chan Message)
-	go func(){
-			readFromQueue(rabbit, readQueueName, message)
-	}()
+	go readFromQueue(rabbit, readQueueName, message)
 
 	statusChan := make(chan Message)
-	go func(){
-			readFromQueue(rabbit, statusQueue, statusChan)
-	}()
+	go readFromQueue(rabbit, statusQueue, statusChan)
 
 	go func(){
 		for {

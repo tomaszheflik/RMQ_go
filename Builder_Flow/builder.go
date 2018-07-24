@@ -31,9 +31,7 @@ func main() {
 	var toProcess Message
 
 	message := make(chan Message)
-	go func(){
-			readFromQueue(rabbit, builderQueue, message)
-	}()
+	go readFromQueue(rabbit, builderQueue, message)
 
 	for {
 		toProcess = <-message
